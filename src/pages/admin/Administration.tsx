@@ -298,7 +298,7 @@ const Administration = () => {
   };
 
   const canEditRole = (user: User) => {
-    return isSuperAdmin && user.role !== "EXPERT";
+    return isSuperAdmin && user.role !== "EXPERT" && user.role !== "SUPER_ADMIN";
   };
 
   const canDeleteUser = (
