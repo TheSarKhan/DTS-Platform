@@ -219,6 +219,10 @@ function Applies() {
         fetchExperts(controller);
         fetchData(controller, "SUPER_ADMIN");
         break;
+      case "ADMIN":
+        fetchExperts(controller);
+        fetchData(controller, "ADMIN");
+        break;
       case "EXPERT":
         fetchData(controller, "EXPERT");
         fetchAdmins(controller);
