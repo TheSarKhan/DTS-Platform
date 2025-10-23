@@ -13,6 +13,8 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { toast } from "react-toastify";
 import ReadFeedback from "./ReadFeedback";
 import WriteFeedback from "../../components/WriteFeedback";
+import * as XLSX from "xlsx";
+import { ExcelIcon } from "../../components/SVG/Admin";
 
 DataTable.use(DT);
 
@@ -357,6 +359,21 @@ function Applies() {
     (company) => company.id === modalState.companyId
   );
 
+  function downloadExcel(data: Company[], filename = "data.xlsx") {
+    const dataDto = data.map((company) => ({
+      id: company.id,
+      name: company.name,
+      status: company.status,
+      sector: company.sector,
+      region: company.region,
+      date: company.date
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataDto);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+    XLSX.writeFile(workbook, filename);
+  }
+
   return (
     <div>
       <TableSettingsContext.Provider
@@ -395,7 +412,16 @@ function Applies() {
         <div>
           <h1 className="text-xl leading-6 tracking-wide font-medium mb-5">
             Müraciətlər
-          </h1>
+          </h1>{" "}
+          <button
+            onClick={() => {
+              downloadExcel(tableData, "applies.xlsx");
+            }}
+            className="text-[#1A4381] bg-white mb-4 text-[15px] font-bold leading-5 py-2 pl-3 pr-2 flex items-center gap-1.5 rounded-xl transition hover:bg-gray-300 cursor-pointer font-plus-jakarta"
+          >
+            Yüklə
+            <ExcelIcon />
+          </button>
           <div>
             <AppliesTable
               data={tableData}

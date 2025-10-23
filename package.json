@@ -49,6 +49,7 @@
     "styled-components": "^6.1.17",
     "sweetalert2": "^11.26.3",
     "swiper": "^11.2.6",
+    "xlsx": "^0.18.5",
     "yup": "^1.7.0"
   },
   "devDependencies": {
