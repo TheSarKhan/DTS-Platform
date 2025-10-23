@@ -7,6 +7,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import useAuth from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { UserRound } from "lucide-react";
+import Swal from "sweetalert2";
 
 interface User {
   id?: number;
@@ -144,17 +145,29 @@ const Administration = () => {
     }
 
     try {
-      await axiosPrivate.patch(
-        `/api/v1/users/change-role?id=${user.id}&role=${newRole}`
-      );
+      Swal.fire({
+        title: "Əminsiniz?",
+        text: "İstifadəçinin rolunu dəyişmək istədiyinizə əminsiniz?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Bəli",
+        cancelButtonText: "Ləğv et",
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          await axiosPrivate.patch(
+            `/api/v1/users/change-role?id=${user.id}&role=${newRole}`
+          );
 
-      setUsers((prev) =>
-        prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u))
-      );
+          setUsers((prev) =>
+            prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u))
+          );
 
-      toast.success(
-        `${user.name} ${user.surname} rol uğurla dəyişdirildi: ${newRole}`
-      );
+          toast.success(
+            `${user.name} ${user.surname} rol uğurla dəyişdirildi: ${newRole}`
+          );
+          Swal.fire("Updated!", "The user role has been changed.", "success");
+        }
+      });
     } catch (err: any) {
       console.error("Role change error:", err);
       const errorMessage =
@@ -244,61 +257,76 @@ const Administration = () => {
       }
     }
 
-    if (!user.id) {
-      setPendingUsers((prev) => prev.filter((u) => u !== user));
-      toast.success(`${user.name} ${user.surname} siyahıdan silindi.`);
-      return;
-    }
-
-    try {
-      await axiosPrivate.delete(`/api/v1/users?id=${user.id}`);
-
-      const response = await axiosPrivate.get("/api/v1/users/all");
-
-      const pending: PendingUser[] = [];
-      const verified: User[] = [];
-
-      response.data.forEach((u: any) => {
-        const mappedUser = {
-          id: u.id,
-          name: u.name || "",
-          surname: u.surname || "",
-          email: u.email || "",
-          imageUrl: u.imageUrl,
-          createdDate: u.createdDate,
-          role: u.role || "",
-          isVerified: u.isVerified || false,
-          invitationSent: !u.isVerified ? true : false,
-          uuid: u.uuid,
-        };
-
-        if (!u.isVerified) {
-          pending.push(mappedUser);
-        } else {
-          verified.push(mappedUser);
+    Swal.fire({
+      title: "Əminsiniz?",
+      text: "İstifadəçini silmək istədiyinizə əminsiniz?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Bəli, sil",
+      cancelButtonText: "Ləğv et",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        if (!user.id) {
+          setPendingUsers((prev) => prev.filter((u) => u !== user));
+          toast.success(`${user.name} ${user.surname} siyahıdan silindi.`);
+          return;
         }
-      });
 
-      setPendingUsers(pending);
-      setUsers(verified);
+        try {
+          await axiosPrivate.delete(`/api/v1/users?id=${user.id}`);
 
-      toast.success(`${user.name} ${user.surname} uğurla silindi.`);
-    } catch (err: any) {
-      console.error("Delete error:", err);
-      const errorMessage =
-        err.response?.status === 404
-          ? `${user.name} ${user.surname} tapılmadı.`
-          : err.response?.status === 403
-          ? "Silinmə üçün icazəniz yoxdur."
-          : `Silinmə uğursuz oldu: ${
-              err.response?.data?.message || err.message
-            }`;
-      toast.error(errorMessage);
-    }
+          const response = await axiosPrivate.get("/api/v1/users/all");
+
+          const pending: PendingUser[] = [];
+          const verified: User[] = [];
+
+          response.data.forEach((u: any) => {
+            const mappedUser = {
+              id: u.id,
+              name: u.name || "",
+              surname: u.surname || "",
+              email: u.email || "",
+              imageUrl: u.imageUrl,
+              createdDate: u.createdDate,
+              role: u.role || "",
+              isVerified: u.isVerified || false,
+              invitationSent: !u.isVerified ? true : false,
+              uuid: u.uuid,
+            };
+
+            if (!u.isVerified) {
+              pending.push(mappedUser);
+            } else {
+              verified.push(mappedUser);
+            }
+          });
+
+          setPendingUsers(pending);
+          setUsers(verified);
+
+          toast.success(`${user.name} ${user.surname} uğurla silindi.`);
+        } catch (err: any) {
+          console.error("Delete error:", err);
+          const errorMessage =
+            err.response?.status === 404
+              ? `${user.name} ${user.surname} tapılmadı.`
+              : err.response?.status === 403
+              ? "Silinmə üçün icazəniz yoxdur."
+              : `Silinmə uğursuz oldu: ${
+                  err.response?.data?.message || err.message
+                }`;
+          toast.error(errorMessage);
+        }
+
+        Swal.fire("Silindi!", "İstifadəçi uğurla silindi.", "success");
+      }
+    });
   };
 
   const canEditRole = (user: User) => {
-    return isSuperAdmin && user.role !== "EXPERT" && user.role !== "SUPER_ADMIN";
+    return (
+      isSuperAdmin && user.role !== "EXPERT" && user.role !== "SUPER_ADMIN"
+    );
   };
 
   const canDeleteUser = (
