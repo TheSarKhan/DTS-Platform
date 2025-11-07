@@ -12,6 +12,7 @@ import PersistLogin from "./pages/admin/PersistLogin";
 import CompanyInfo from "./pages/admin/CompanyInfo";
 import AddCompany from "./pages/admin/AddCompany";
 import ForgotPassword from "./pages/admin/ForgotPassword";
+import ChangePassword from "./pages/admin/ChangePassword";
 const Home = lazy(() => import("./pages/Home"));
 const ComplianceAndPrioritization = lazy(
   () => import("./pages/ComplianceAndPrioritization")
@@ -85,6 +86,7 @@ const App: React.FC = () => {
               {/* <Route path="reports" element={<Reports />} />{" "} */}
               <Route path="profile-info" element={<ProfileInfo />} />{" "}
               <Route path="notification" element={<Notification />} />{" "}
+              <Route path="change-password" element={<ChangePassword />} />
             </Route>
             <Route path="/login" element={<AdminLogin />} />
             <Route path="/admin/register" element={<AdminRegister />} />
