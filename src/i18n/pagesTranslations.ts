@@ -814,27 +814,26 @@ export const pagesTranslations = {
     },
   },
   admin: {
-    downloadBtn:{
+    downloadBtn: {
       AZ: "Excel faylı olaraq yüklə",
       EN: "Download as an Excel file",
     },
-    
-    title:{
+
+    title: {
       AZ: "Xoş gəlmisiniz!",
       EN: "Welcome!",
     },
 
     login: {
-       loginTitle:{
+      loginTitle: {
         AZ: "Xoş gəlmisiniz!",
         EN: "Welcome!",
       },
-      eMail : {
+      eMail: {
         AZ: "E-poçt",
         EN: "E-mail",
       },
-      email:
-      {
+      email: {
         AZ: "E-poçt",
         EN: "Email",
       },
@@ -855,8 +854,17 @@ export const pagesTranslations = {
           AZ: "Boş buraxıla bilməz. Minimum 6 simvol, maksimum 255 simvol",
           EN: "Cannot be left empty. Minimum 6 characters, maximum 255 characters",
         },
+      },
+    },
+      changePassword: {
+        title: {
+          AZ: "Şifrəi dəyiş",
+          EN: "Change password"
+        },
+        saveBtn: {
+          AZ: "Təsdiqlə",
+          EN: "Submit"
+        }
       }
-    }
-
-  }
+  },
 };
