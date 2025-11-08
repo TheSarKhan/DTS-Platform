@@ -86,8 +86,8 @@ const App: React.FC = () => {
               {/* <Route path="reports" element={<Reports />} />{" "} */}
               <Route path="profile-info" element={<ProfileInfo />} />{" "}
               <Route path="notification" element={<Notification />} />{" "}
-              <Route path="change-password" element={<ChangePassword />} />
             </Route>
+            <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/login" element={<AdminLogin />} />
             <Route path="/admin/register" element={<AdminRegister />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />

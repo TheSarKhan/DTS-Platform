@@ -8,6 +8,8 @@ import useAuth from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { UserRound } from "lucide-react";
 import Swal from "sweetalert2";
+import changePassword from "../../Icons/ChangePassword.svg";
+import ChangePasswordModal from "../../components/AdminChangePasswordModal";
 
 interface User {
   id?: number;
@@ -587,6 +589,8 @@ const UserRow = ({
   };
 
   const [imgError, setImgError] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const { auth } = useAuth();
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "—";
@@ -629,8 +633,39 @@ const UserRow = ({
       <div className="text-center">
         {isPending ? "—" : formatDate(user.createdDate)}
       </div>
+      <div className="flex justify-center gap-2">
+        {auth.role === "SUPER_ADMIN" &&
+          (user.role === "SUPER_ADMIN" ? (
+            <button
+              type="button"
+              disabled
+              className="opacity-50 cursor-not-allowed flex align-middle"
+              title="Super Admin parolunu dəyişmək mümkün deyil"
+            >
+              <img src={changePassword} alt="changepassword" />
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setIsPasswordModalOpen(true)}
+                className="flex align-middle"
+              >
+                <img src={changePassword} alt="changepassword" />
+              </button>
+              <ChangePasswordModal
+                isOpen={isPasswordModalOpen}
+                onClose={() => setIsPasswordModalOpen(false)}
+                userId={user.id}
+              />
+            </>
+          ))}
 
-      <div className="flex justify-center">
+        <ChangePasswordModal
+          isOpen={isPasswordModalOpen}
+          onClose={() => setIsPasswordModalOpen(false)}
+          userId={user.id}
+        />
         {isPending ? (
           <Select
             value={user.role}

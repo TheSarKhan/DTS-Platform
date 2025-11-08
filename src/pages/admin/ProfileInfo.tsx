@@ -354,7 +354,7 @@ const ProfileInfo: React.FC = () => {
 
             <div className="text-end mt-4 flex justify-between gap-2">
               <Link
-                to="/admin/change-password"
+                to="/change-password"
                 className="bg-[#E8ECF2] text-[#1A4381] cursor-pointer px-6 py-2 rounded disabled:opacity-50 transition-all duration-500 hover:bg-[#1A4381] hover:text-white"
               >
                 Şifrəni dəyiş
