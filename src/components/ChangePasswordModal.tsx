@@ -3,52 +3,48 @@ import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import * as Yup from "yup";
 import { toast } from "react-toastify";
 import { ErrorMessage, Field, Formik } from "formik";
+import { useNavigate } from "react-router-dom";
 
-interface ChangePasswordModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  userId: number | undefined;
-  name: string;
-  surname: string;
-}
-
-const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
+const ChangeOwnPasswordModal = ({
   isOpen,
   onClose,
-  userId,
-  name,
-  surname,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
 }) => {
   const axiosPrivate = useAxiosPrivate();
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const validationSchema = Yup.object({
+    oldPassword: Yup.string().required("Köhnə şifrə mütləqdir"),
     newPassword: Yup.string()
-      .min(8, "Parol ən az 8 simvoldan ibarət olmalıdır")
-      .required("Yeni parol mütləqdir"),
+      .min(8, "Şifrə ən az 8 simvoldan ibarət olmalıdır")
+      .required("Yeni şifrə mütləqdir"),
     confirmPassword: Yup.string()
-      .oneOf([Yup.ref("newPassword")], "Parollar uyğun gəlmir")
-      .required("Parolu təsdiqləyin"),
+      .oneOf([Yup.ref("newPassword")], "şifrələr uyğun gəlmir")
+      .required("Şifrəni təsdiqləyin"),
   });
 
-  const handleSubmit = async (values: { newPassword: string }) => {
+  const handleSubmit = async (values: {
+    oldPassword: string;
+    newPassword: string;
+  }) => {
     try {
       setLoading(true);
-      await axiosPrivate.patch(`/api/v1/admins/change-user-password`, null, {
+      await axiosPrivate.patch(`/api/v1/auth/reset-current-password`, null, {
         params: {
-          id: userId,
+          oldPassword: values.oldPassword,
           newPassword: values.newPassword,
-        },
-        headers: {
-          Accept: "*/*",
         },
       });
 
-      toast.success("Parol uğurla yeniləndi");
+      toast.success("Şifrə uğurla yeniləndi");
       onClose();
+      navigate("/login");
     } catch (err: any) {
       console.error("Password change error:", err);
-      toast.error("Parol dəyişdirilərkən xəta baş verdi");
+      toast.error("Şifrə dəyişdirilərkən xəta baş verdi");
     } finally {
       setLoading(false);
     }
@@ -59,7 +55,11 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <Formik
-        initialValues={{ newPassword: "", confirmPassword: "" }}
+        initialValues={{
+          oldPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        }}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
@@ -76,16 +76,29 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               ✕
             </button>
 
-            <h2 className="text-lg font-semibold mb-1">
-              {name} {surname} üçün yeni parol təyin et
-            </h2>
+            <h2 className="text-lg font-semibold mb-3">Şifrəni dəyiş</h2>
 
             <div>
-              <label className="block mb-1 text-sm">Yeni parol</label>
+              <label className="block mb-1 text-sm">Köhnə şifrə</label>
+              <Field
+                name="oldPassword"
+                type="password"
+                placeholder="Köhnə şifrə"
+                className="w-full border border-[#CED4DA] p-2 rounded"
+              />
+              <ErrorMessage
+                name="oldPassword"
+                component="div"
+                className="text-red-500 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block mb-1 text-sm">Yeni şifrə</label>
               <Field
                 name="newPassword"
                 type="password"
-                placeholder="Yeni parol"
+                placeholder="Yeni şifrə"
                 className="w-full border border-[#CED4DA] p-2 rounded"
               />
               <ErrorMessage
@@ -96,11 +109,11 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             </div>
 
             <div>
-              <label className="block mb-1 text-sm">Parolu təsdiqləyin</label>
+              <label className="block mb-1 text-sm">Şifrəni təsdiqləyin</label>
               <Field
                 name="confirmPassword"
                 type="password"
-                placeholder="Parolu təsdiqləyin"
+                placeholder="Şifrəni təsdiqləyin"
                 className="w-full border border-[#CED4DA] p-2 rounded"
               />
               <ErrorMessage
@@ -126,4 +139,4 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   );
 };
 
-export default ChangePasswordModal;
+export default ChangeOwnPasswordModal;

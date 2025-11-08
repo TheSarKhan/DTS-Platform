@@ -657,6 +657,8 @@ const UserRow = ({
                 isOpen={isPasswordModalOpen}
                 onClose={() => setIsPasswordModalOpen(false)}
                 userId={user.id}
+                name={user.name}
+                surname={user.surname}
               />
             </>
           ))}
@@ -665,6 +667,8 @@ const UserRow = ({
           isOpen={isPasswordModalOpen}
           onClose={() => setIsPasswordModalOpen(false)}
           userId={user.id}
+          name={user.name}
+          surname={user.surname}
         />
         {isPending ? (
           <Select

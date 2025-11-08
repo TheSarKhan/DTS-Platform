@@ -5,7 +5,8 @@ import "react-international-phone/style.css";
 import { useEffect, useState } from "react";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { toast } from "react-toastify";
-import { Link } from "react-router-dom";
+import ChangeOwnPasswordModal from "../../components/ChangePasswordModal";
+
 interface FormValues {
   name: string;
   surname: string;
@@ -41,15 +42,11 @@ const months = [
   "Noyabr",
   "Dekabr",
 ];
-
-const years = Array.from(
-  { length: 101 },
-  (_, i) => new Date().getFullYear() - i
-);
+const years = Array.from({ length: 101 }, (_, i) => new Date().getFullYear() - i);
 
 const ProfileInfo: React.FC = () => {
   const axiosPrivate = useAxiosPrivate();
-  const [profile, setProfile] = useState({
+  const [profile, setProfile] = useState<FormValues>({
     name: "",
     surname: "",
     birthDay: "",
@@ -58,37 +55,43 @@ const ProfileInfo: React.FC = () => {
     phone: "",
     email: "",
   });
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
     const controller = new AbortController();
+
     const fetchProfile = async () => {
       try {
         const response = await axiosPrivate.get("/api/v1/users/profile", {
           signal: controller.signal,
         });
+
         if (isMounted) {
           const dateOfBirth = response.data.dateOfBirth
             ? response.data.dateOfBirth.split("-")
             : null;
+
           setProfile({
             name: response.data.name,
             surname: response.data.surname,
-            birthDay: dateOfBirth !== null ? dateOfBirth[2] : "",
-            birthMonth: dateOfBirth !== null ? dateOfBirth[1] : "",
-            birthYear: dateOfBirth !== null ? dateOfBirth[0] : "",
+            birthDay: dateOfBirth ? dateOfBirth[2] : "",
+            birthMonth: dateOfBirth ? dateOfBirth[1] : "",
+            birthYear: dateOfBirth ? dateOfBirth[0] : "",
             phone: response.data.phoneNumber ?? "",
             email: response.data.email,
           });
         }
       } catch (error) {
-        if (isMounted) {
-          console.error("Error fetching profile:", error);
-        }
+        if (isMounted) console.error("Error fetching profile:", error);
       }
     };
 
     fetchProfile();
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, []);
 
   const updateProfile = async (data: FormValues) => {
@@ -106,21 +109,13 @@ const ProfileInfo: React.FC = () => {
 
     formData.append(
       "request",
-      new Blob([JSON.stringify(infos)], {
-        type: "application/json",
-      })
+      new Blob([JSON.stringify(infos)], { type: "application/json" })
     );
 
     try {
-      const response = await axiosPrivate.put(
-        "/api/v1/users/profile",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const response = await axiosPrivate.put("/api/v1/users/profile", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
       return response.data;
     } catch (error) {
@@ -138,7 +133,7 @@ const ProfileInfo: React.FC = () => {
       toast.success("Dəyişikliklər tətbiq olundu.");
     } catch (error) {
       console.error(error);
-      alert("Xəta baş verdi!");
+      toast.error("Xəta baş verdi!");
     } finally {
       setSubmitting(false);
     }
@@ -146,7 +141,6 @@ const ProfileInfo: React.FC = () => {
 
   useEffect(() => {
     document.title = "Profil Məlumatları";
-
     return () => {
       document.title = "DTS Platform";
     };
@@ -154,9 +148,8 @@ const ProfileInfo: React.FC = () => {
 
   return (
     <div className="bg-white rounded-[8px] w-content max-w-[750px] p-[30px]">
-      <h1 className="text-start font-[500] text-[22px] mb-5">
-        Profil Məlumatları
-      </h1>
+      <h1 className="text-start font-[500] text-[22px] mb-5">Profil Məlumatları</h1>
+
       <Formik
         initialValues={profile}
         enableReinitialize
@@ -165,7 +158,7 @@ const ProfileInfo: React.FC = () => {
       >
         {({ setFieldValue, values, isSubmitting }) => (
           <Form className="flex flex-col gap-6">
-            {/* First Name */}
+            {/* Имя */}
             <div>
               <label htmlFor="name" className="block mb-1 font-medium">
                 Adınız<span className="text-red-500">*</span>
@@ -176,14 +169,10 @@ const ProfileInfo: React.FC = () => {
                 placeholder="Ad"
                 className="border border-[#CED4DA] rounded-[8px] p-2 w-full focus:outline-none focus:border-blue-500"
               />
-              <ErrorMessage
-                name="name"
-                component="div"
-                className="text-red-500 text-sm"
-              />
+              <ErrorMessage name="name" component="div" className="text-red-500 text-sm" />
             </div>
 
-            {/* Last Name */}
+            {/* Фамилия */}
             <div>
               <label htmlFor="surname" className="block mb-1 font-medium">
                 Soyadınız<span className="text-red-500">*</span>
@@ -194,24 +183,16 @@ const ProfileInfo: React.FC = () => {
                 placeholder="Soyad"
                 className="border border-[#CED4DA] rounded-[8px] p-2 w-full focus:outline-none focus:border-blue-500"
               />
-              <ErrorMessage
-                name="surname"
-                component="div"
-                className="text-red-500 text-sm"
-              />
+              <ErrorMessage name="surname" component="div" className="text-red-500 text-sm" />
             </div>
 
-            {/* Birth Date */}
+            {/* Дата рождения */}
             <div>
-              <label className="block mb-6 mt-8 font-medium">
-                Doğum tarixi
-              </label>
+              <label className="block mb-6 mt-8 font-medium">Doğum tarixi</label>
               <div className="flex gap-3">
-                {/* Day */}
+                {/* День */}
                 <div className="flex-1 relative">
-                  <label htmlFor="surname" className="block mb-1 font-medium">
-                    Gün<span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-1 font-medium">Gün<span className="text-red-500">*</span></label>
                   <Field
                     as="select"
                     name="birthDay"
@@ -219,33 +200,14 @@ const ProfileInfo: React.FC = () => {
                   >
                     <option value="">Gün</option>
                     {days.map((d) => (
-                      <option key={d} value={d < 10 ? `0${d}` : d}>
-                        {d}
-                      </option>
+                      <option key={d} value={d < 10 ? `0${d}` : d}>{d}</option>
                     ))}
                   </Field>
-                  <div className="pointer-events-none absolute inset-y-0 right-3 top-6 flex items-center">
-                    <svg
-                      className="w-4 h-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
                 </div>
 
-                {/* Month */}
+                {/* Месяц */}
                 <div className="flex-1 relative">
-                  <label htmlFor="surname" className="block mb-1 font-medium">
-                    Ay<span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-1 font-medium">Ay<span className="text-red-500">*</span></label>
                   <Field
                     as="select"
                     name="birthMonth"
@@ -253,33 +215,14 @@ const ProfileInfo: React.FC = () => {
                   >
                     <option value="">Ay</option>
                     {months.map((m, i) => (
-                      <option key={i} value={i + 1}>
-                        {m}
-                      </option>
+                      <option key={i} value={i + 1}>{m}</option>
                     ))}
                   </Field>
-                  <div className="pointer-events-none absolute inset-y-0 right-3 top-6 flex items-center">
-                    <svg
-                      className="w-4 h-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
                 </div>
 
-                {/* Year */}
+                {/* Год */}
                 <div className="flex-1 relative">
-                  <label htmlFor="surname" className="block mb-1 font-medium">
-                    İl<span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-1 font-medium">İl<span className="text-red-500">*</span></label>
                   <Field
                     as="select"
                     name="birthYear"
@@ -287,31 +230,14 @@ const ProfileInfo: React.FC = () => {
                   >
                     <option value="">İl</option>
                     {years.map((y) => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
+                      <option key={y} value={y}>{y}</option>
                     ))}
                   </Field>
-                  <div className="pointer-events-none absolute inset-y-0 right-3 top-6 flex items-center">
-                    <svg
-                      className="w-4 h-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Phone */}
+            {/* Телефон */}
             <div className="phone-input-container">
               <label htmlFor="phone" className="block mb-1 font-medium">
                 Mobil nömrə
@@ -326,11 +252,7 @@ const ProfileInfo: React.FC = () => {
                   className: "react-international-phone-country-selector",
                 }}
               />
-              <ErrorMessage
-                name="phone"
-                component="div"
-                className="text-red-500 text-sm"
-              />
+              <ErrorMessage name="phone" component="div" className="text-red-500 text-sm" />
             </div>
 
             {/* Email */}
@@ -345,49 +267,54 @@ const ProfileInfo: React.FC = () => {
                 placeholder="example@gmail.com"
                 className="border border-[#CED4DA] rounded-[8px] p-2 w-full focus:outline-none focus:border-blue-500"
               />
-              <ErrorMessage
-                name="email"
-                component="div"
-                className="text-red-500 text-sm"
-              />
+              <ErrorMessage name="email" component="div" className="text-red-500 text-sm" />
             </div>
 
+            {/* Кнопки */}
             <div className="text-end mt-4 flex justify-between gap-2">
-              <Link
-                to="/change-password"
-                className="bg-[#E8ECF2] text-[#1A4381] cursor-pointer px-6 py-2 rounded disabled:opacity-50 transition-all duration-500 hover:bg-[#1A4381] hover:text-white"
+              <button
+                type="button"
+                onClick={() => setIsPasswordModalOpen(true)}
+                className="bg-[#E8ECF2] text-[#1A4381] cursor-pointer px-6 py-2 rounded transition-all duration-500 hover:bg-[#1A4381] hover:text-white"
               >
                 Şifrəni dəyiş
-              </Link>
+              </button>
+
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className="bg-[#E8ECF2] text-[#1A4381] cursor-pointer px-6 py-2 rounded disabled:opacity-50 transition-all duration-500 hover:bg-[#1A4381] hover:text-white"
               >
-                Göndər
+                Yadda saxla
               </button>
             </div>
           </Form>
         )}
       </Formik>
+
+      <ChangeOwnPasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
+
       <style>
         {`
           input:focus,
           select:focus {
-          outline: none;
-          border-color: blue;
+            outline: none;
+            border-color: blue;
           }
           .react-international-phone-input {
-          border-color: #CED4DA!important;
-          border-top-right-radius: 12px!important;
-          border-bottom-right-radius: 12px!important;
-          color:black!important;
+            border-color: #CED4DA!important;
+            border-top-right-radius: 12px!important;
+            border-bottom-right-radius: 12px!important;
+            color:black!important;
           }
           .react-international-phone-country-selector-button{
-          padding:10px;
-          border-color: #CED4DA!important;
-          border-top-left-radius: 12px!important;
-          border-bottom-left-radius: 12px!important;
+            padding:10px;
+            border-color: #CED4DA!important;
+            border-top-left-radius: 12px!important;
+            border-bottom-left-radius: 12px!important;
           }
         `}
       </style>
