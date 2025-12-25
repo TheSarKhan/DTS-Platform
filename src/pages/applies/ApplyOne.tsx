@@ -76,11 +76,11 @@ export default function ApplyOne() {
       return page.companyRegisterNumberNumeric[language];
     }
 
-    if (value.trim().length < 3) {
+    if (value.trim().length < 10) {
       return page.companyRegisterNumberMinLength[language];
     }
 
-    if (value.trim().length > 50) {
+    if (value.trim().length > 10) {
       return page.companyRegisterNumberMaxLength[language];
     }
 
@@ -455,7 +455,7 @@ export default function ApplyOne() {
                 name="companyRegisterNumber"
                 value={localFormData.companyRegisterNumber}
                 onChange={handleInputChange}
-                maxLength={50}
+                maxLength={10}
                 placeholder={page.companyRegisterNumberPlaceholder[language]}
                 className={`w-full bg-transparent rounded-lg p-3 focus:outline-none focus:ring-2 transition duration-300 border ${
                   errors.companyRegisterNumber

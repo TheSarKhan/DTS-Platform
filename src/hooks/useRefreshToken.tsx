@@ -1,4 +1,4 @@
-import API from "../services/API/axiosConfig,api";
+import API from "../services/API/axiosConfig.api";
 import useAuth from "./useAuth";
 
 function useRefreshToken() {

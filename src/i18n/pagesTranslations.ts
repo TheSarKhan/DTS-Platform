@@ -343,12 +343,12 @@ export const pagesTranslations = {
       EN: "Only numbers can be entered",
     },
     companyRegisterNumberMinLength: {
-      AZ: "Minimum 3 rəqəm olmalıdır",
-      EN: "Must be at least 3 digits",
+      AZ: "Minimum 10 rəqəm olmalıdır",
+      EN: "Must be at least 10 digits",
     },
     companyRegisterNumberMaxLength: {
-      AZ: "Maksimum 50 simvol ola bilər",
-      EN: "Maximum 50 characters allowed",
+      AZ: "Maksimum 10 simvol ola bilər",
+      EN: "Maximum 10 characters allowed",
     },
     createYearFourDigits: {
       AZ: "4 rəqəmli il daxil edin",

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Download } from "lucide-react";
@@ -20,7 +19,6 @@ import { toast } from "react-toastify";
 const DB_NAME = "ALL files";
 const STORE_NAME = "files";
 
-// Database helper functions remain the same
 function openDB() {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, 1);
@@ -102,7 +100,6 @@ export default function ApplyFive() {
   });
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
   const [showThankYouModal, setShowThankYouModal] = useState<boolean>(false);
-  // const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState<number>(0);
   const [localIsSubmitting, setLocalIsSubmitting] = useState<boolean>(false);
@@ -110,7 +107,36 @@ export default function ApplyFive() {
   const propertyLawCertificateRef = useRef<HTMLInputElement>(null);
   const financialStatementRef = useRef<HTMLInputElement>(null);
 
-  // Validate form whenever form data changes
+  // Fayl validasiyası (production üçün vacib)
+  const validateFile = (file: File, type: string): boolean => {
+    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+
+    if (file.size > MAX_SIZE) {
+      setErrors(prev => ({
+        ...prev,
+        [type]: `File size exceeds 10MB limit`
+      }));
+      return false;
+    }
+
+    if (!allowedTypes.includes(file.type)) {
+      setErrors(prev => ({
+        ...prev,
+        [type]: `Invalid file type. Only PDF, DOC, DOCX, XLS, XLSX allowed`
+      }));
+      return false;
+    }
+
+    return true;
+  };
+
   useEffect(() => {
     const validateForm = () => {
       const filesUploaded =
@@ -127,7 +153,6 @@ export default function ApplyFive() {
     validateForm();
   }, [formData, captchaToken]);
 
-  // Load saved data on mount
   useEffect(() => {
     const savedData = JSON.parse(localStorage.getItem("restOfData") || "null");
     Promise.all([
@@ -178,102 +203,155 @@ export default function ApplyFive() {
       position: "top-center",
     });
 
-  const handleConfirmModalYes = async () => {
-    setLocalIsSubmitting(true);
+  // ✅ Numunevi sistemə uyğun submit funksiyası
+const handleConfirmModalYes = async () => {
+  setLocalIsSubmitting(true);
+  setSubmissionError(null);
+  
+  try {
+    const API_URL = import.meta.env.VITE_API_URL;
+    
+    // 1. Server-ın əsas səhifəsinə bağlana bilirikmi?
     try {
-      const companyData = JSON.parse(localStorage.getItem("companyData")!);
-      const digitalAndFinancial = JSON.parse(
-        localStorage.getItem("digitalAndFinancial")!
+      const serverCheck = await fetch(API_URL, {
+        method: 'GET',
+        mode: 'no-cors'
+      });
+    } catch (serverError) {
+      throw new Error(
+        `Backend server is not accessible!\n\n` +
+        `URL: ${API_URL}\n\n` +
+        `Please check:\n` +
+        `1. Server is running\n` +
+        `2. Correct IP/port (45.87.120.60:7777)\n` +
+        `3. No firewall blocking\n` +
+        `4. Contact backend developer`
       );
-      const digitalReadiness = JSON.parse(
-        localStorage.getItem("digitalReadiness")!
-      );
-      const propertyLaw = JSON.parse(localStorage.getItem("propertyLaw")!);
-      const restOfData = JSON.parse(localStorage.getItem("restOfData")!);
-      const dataToSubmit = {
-        companyData: {
-          companyName: companyData.companyName,
-          companyRegisterNumber: companyData.companyRegisterNumber,
-          createYear: Number(companyData.createYear),
-          workerCount: companyData.companySize,
-          annualTurnover: companyData.annualTurnover,
-          address: companyData.companyAddress,
-          cityAndRegion: companyData.location,
-          website: companyData.website,
-          contactName: companyData.contactPerson,
-          contactEmail: companyData.email,
-          contactPhone: companyData.phone,
-        },
-        declarationConsent: {
-          dataIsReal: restOfData.declaration.dataIsReal,
-          permitContact: restOfData.declaration.permitContact,
-          privacyAcceptance: restOfData.declaration.privacyAcceptance,
-        },
-        digitalLeadership: {
-          digitalTeamOrLead: digitalAndFinancial.digital.digitalTeamOrLead,
-          digitalPath: digitalAndFinancial.digital.digitalPath,
-          digitalTransformationLoyality:
-            digitalAndFinancial.digital.digitalTransformationLoyality,
-        },
-        financialNeeding: {
-          financialNeed: digitalAndFinancial.finance.financialNeed,
-          neededBudget: digitalAndFinancial.finance.neededBudget,
-        },
-        digitalReadiness: {
-          keyChallenges: digitalReadiness.keyChallenges,
-          digitalLevel: Number(digitalReadiness.digitalLevel),
-          digitalTools: digitalReadiness.digitalTools,
-          companyPurpose: digitalReadiness.companyPurpose,
-        },
-        propertyLaw: {
-          businessOperations: propertyLaw.businessOperations,
-          companyLawType: propertyLaw.companyLawType,
-          products: propertyLaw.products,
-          exportActivity: propertyLaw.exportActivity,
-          exportBazaar: propertyLaw.exportBazaar,
-        },
-      };
-
-      const files = {
-        propertyLawCertificate: await getFileFromIndexedDB("propertyLawCertificate"),
-        registerCertificate: await getFileFromIndexedDB("registerCertificate"),
-        financialStatement: await getFileFromIndexedDB("financialStatement"),
-      };
-
-      if (captchaToken) {
-        const result = await companyService.submitCompanyData(
-          dataToSubmit,
-          files,
-          captchaToken
-        );
-
-        interface SubmitResult {
-          status?: number;
-          response?: {
-            data?: string;
-          };
+    }
+    
+    // 2. Əgər server çalışırsa, CORS testi
+    try {
+      const corsTest = await fetch(`${API_URL}/api/v1/companies/add`, {
+        method: 'OPTIONS',
+        headers: {
+          'Origin': window.location.origin,
+          'Access-Control-Request-Method': 'POST',
         }
-        const typedResult = result as SubmitResult;
-        if (typedResult?.status !== 201) {
-          showFillToast("Please fill all fields");
-          return;
-        }
+      });
+    } catch (corsError) {
+    }
+    
+    // 3. DATA hazırla (əvvəlki kimi)
+    const companyData = JSON.parse(localStorage.getItem("companyData")!);
+    const digitalAndFinancial = JSON.parse(localStorage.getItem("digitalAndFinancial")!);
+    const digitalReadiness = JSON.parse(localStorage.getItem("digitalReadiness")!);
+    const propertyLaw = JSON.parse(localStorage.getItem("propertyLaw")!);
+    const restOfData = JSON.parse(localStorage.getItem("restOfData")!);
+    
+    const dataToSubmit = {
+      companyData: {
+        companyName: companyData.companyName,
+        companyRegisterNumber: companyData.companyRegisterNumber,
+        createYear: Number(companyData.createYear),
+        workerCount: companyData.companySize,
+        annualTurnover: companyData.annualTurnover,
+        address: companyData.companyAddress,
+        cityAndRegion: companyData.location,
+        website: companyData.website,
+        contactName: companyData.contactPerson,
+        contactEmail: companyData.email,
+        contactPhone: companyData.phone,
+      },
+      declarationConsent: {
+        dataIsReal: restOfData.declaration.dataIsReal,
+        permitContact: restOfData.declaration.permitContact,
+        privacyAcceptance: restOfData.declaration.privacyAcceptance,
+      },
+      digitalLeadership: {
+        digitalTeamOrLead: digitalAndFinancial.digital.digitalTeamOrLead,
+        digitalPath: digitalAndFinancial.digital.digitalPath,
+        digitalTransformationLoyality:
+          digitalAndFinancial.digital.digitalTransformationLoyality,
+      },
+      financialNeeding: {
+        financialNeed: digitalAndFinancial.finance.financialNeed,
+        neededBudget: digitalAndFinancial.finance.neededBudget,
+      },
+      digitalReadiness: {
+        keyChallenges: digitalReadiness.keyChallenges,
+        digitalLevel: Number(digitalReadiness.digitalLevel),
+        digitalTools: digitalReadiness.digitalTools,
+        companyPurpose: digitalReadiness.companyPurpose,
+      },
+      propertyLaw: {
+        businessOperations: propertyLaw.businessOperations,
+        companyLawType: propertyLaw.companyLawType,
+        products: propertyLaw.products,
+        exportActivity: propertyLaw.exportActivity,
+        exportBazaar: propertyLaw.exportBazaar,
+      },
+    };
 
-        recaptchaRef.current?.reset();
-      }
+    // 4. Faylları yüklə
+    const files = {
+      propertyLawCertificate: await getFileFromIndexedDB("propertyLawCertificate"),
+      registerCertificate: await getFileFromIndexedDB("registerCertificate"),
+      financialStatement: await getFileFromIndexedDB("financialStatement"),
+    };
 
+    if (!captchaToken) {
+      throw new Error("CAPTCHA token is missing");
+    }
+
+    
+    // 5. İstəyi göndər
+    const result = await companyService.submitCompanyData(
+      dataToSubmit,
+      files,
+      captchaToken
+    );
+
+    // 6. Response
+    if (result.status === 201) {
+
+      recaptchaRef.current?.reset();
       setShowConfirmModal(false);
       setShowThankYouModal(true);
-      // setSubmitSuccess(true);
       localStorage.clear();
-    } catch (error) {
-      console.error("Submission failed:", error);
-      setSubmissionError(page.submissionErrorMessage[language]);
-      setRetryCount((prev) => prev + 1);
-    } finally {
-      setLocalIsSubmitting(false);
+      
+      // IndexedDB təmizlə
+      try {
+        const db = await openDB();
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+        ["propertyLawCertificate", "registerCertificate", "financialStatement"].forEach(key => {
+          store.delete(key);
+        });
+      } catch (dbError) {
+      }
+    } else {
+      throw new Error(`Unexpected response: ${result.status}`);
     }
-  };
+    
+  } catch (error: any) {
+
+    
+    let errorMessage = "Submission failed";
+    
+    if (error.message.includes('not accessible') || error.message.includes('CANNOT CONNECT')) {
+      errorMessage = error.message;
+    } else if (error.message.includes('Network Error')) {
+      errorMessage = `Network Error - Cannot connect to backend server!\n\nServer: ${import.meta.env.VITE_API_URL}\n\nPlease:\n1. Check if backend server is running\n2. Contact backend developer\n3. Try again later`;
+    } else {
+      errorMessage = error.message || "Unknown error";
+    }
+    
+    setSubmissionError(errorMessage);
+    setRetryCount(prev => prev + 1);
+  } finally {
+    setLocalIsSubmitting(false);
+  }
+};
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name } = e.target;
@@ -301,6 +379,12 @@ export default function ApplyFive() {
     }));
 
     if (file) {
+      // Fayl validasiyası
+      if (!validateFile(file, type)) {
+        e.target.value = ''; // Input-u təmizlə
+        return;
+      }
+
       try {
         await saveFileToIndexedDB(file, type);
         const updatedData = {
@@ -313,7 +397,10 @@ export default function ApplyFive() {
         setFormData(updatedData);
         localStorage.setItem("restOfData", JSON.stringify(updatedData));
       } catch (error) {
-        console.error("Failed to save file to IndexedDB", error);
+        setErrors(prev => ({
+          ...prev,
+          [type]: "Failed to save file. Please try again."
+        }));
       }
     }
   };
@@ -339,7 +426,9 @@ export default function ApplyFive() {
   };
 
   const handleRetry = () => {
-    handleConfirmModalYes();
+    if (retryCount < 3) {
+      handleConfirmModalYes();
+    }
   };
 
   const handleSubmitForm = () => {
@@ -347,6 +436,14 @@ export default function ApplyFive() {
       setShowConfirmModal(true);
       setSubmissionError(null);
       setRetryCount(0);
+    } else {
+      // Validation mesajları göstər
+      if (!formData.files.propertyLawCertificate) {
+        setErrors(prev => ({...prev, propertyLawCertificate: "Required"}));
+      }
+      if (!formData.files.financialStatement) {
+        setErrors(prev => ({...prev, financialStatement: "Required"}));
+      }
     }
   };
 
@@ -355,6 +452,7 @@ export default function ApplyFive() {
       <div className="min-h-screen bg-[url('/images/space-background.jpg')] bg-cover bg-center bg-no-repeat text-white flex flex-col items-center justify-center py-10">
         <ApplySteps onClick={() => true} step={5} />
 
+        {/* Confirm Modal */}
         <AnimatePresence>
           {showConfirmModal && (
             <motion.div
@@ -377,6 +475,7 @@ export default function ApplyFive() {
                   onClick={handleConfirmModalClose}
                   className="absolute cursor-pointer top-5 right-5 text-red-500 hover:text-red-600 transition-colors"
                   aria-label="Close modal"
+                  disabled={localIsSubmitting}
                 >
                   <Five1ApplySvg />
                 </button>
@@ -386,14 +485,15 @@ export default function ApplyFive() {
                     <p className="font-medium mb-2">
                       {page.submissionError.errorTitle[language]}
                     </p>
-                    <p>{submissionError}</p>
+                    <p style={{ whiteSpace: 'pre-line' }}>{submissionError}</p>
                     {retryCount < 3 && (
                       <button
                         onClick={handleRetry}
                         className="mt-3 bg-red-500 text-white py-2 px-4 rounded-md text-sm hover:bg-red-600 transition-colors w-full"
+                        disabled={localIsSubmitting}
                       >
                         {page.submissionError.retryButton[language]} (
-                        {retryCount}/3)
+                        {retryCount + 1}/3)
                       </button>
                     )}
                     {retryCount >= 3 && (
@@ -407,14 +507,15 @@ export default function ApplyFive() {
                 <div className="flex space-x-8 w-full justify-center">
                   <button
                     onClick={handleConfirmModalClose}
-                    className="border cursor-pointer border-red-500 text-red-500 py-3 px-10 rounded-lg hover:bg-red-50 transition font-medium"
+                    className="border cursor-pointer border-red-500 text-red-500 py-3 px-10 rounded-lg hover:bg-red-50 transition font-medium disabled:opacity-50"
                     disabled={localIsSubmitting}
                   >
                     {page.confirmModal.noBtn[language]}
                   </button>
                   <button
                     onClick={handleConfirmModalYes}
-                    className="bg-green-500 cursor-pointer text-white py-3 px-10 rounded-lg hover:bg-green-600 transition font-medium"
+                    className="bg-green-500 cursor-pointer text-white py-3 px-10 rounded-lg hover:bg-green-600 transition font-medium disabled:opacity-50"
+                    disabled={localIsSubmitting}
                   >
                     {localIsSubmitting ? (
                       <span className="flex items-center">
@@ -431,6 +532,7 @@ export default function ApplyFive() {
           )}
         </AnimatePresence>
 
+        {/* Thank You Modal */}
         <AnimatePresence>
           {showThankYouModal && (
             <motion.div
@@ -478,11 +580,13 @@ export default function ApplyFive() {
           )}
         </AnimatePresence>
 
+        {/* Main Form */}
         <div className="w-full max-w-4xl p-8 rounded-lg">
           <div className="text-center mb-10">
             <h1 className="text-3xl font-bold">{page.title[language]}</h1>
           </div>
-          <form className="space-y-8">
+          <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
+            {/* File Input 1 */}
             <div className="space-y-2">
               <label
                 htmlFor="companyRegistry"
@@ -493,7 +597,7 @@ export default function ApplyFive() {
               <div className="relative">
                 <label
                   htmlFor="propertyLawCertificate"
-                  className="w-full h-14 border border-gray-600 rounded-lg flex items-center justify-between px-4 bg-gray-800/30 text-gray-400 text-sm cursor-pointer select-none"
+                  className="w-full h-14 border border-gray-600 rounded-lg flex items-center justify-between px-4 bg-gray-800/30 text-gray-400 text-sm cursor-pointer select-none hover:border-blue-500 transition-colors"
                 >
                   <span className="truncate">
                     {formData.files?.propertyLawCertificate
@@ -521,6 +625,7 @@ export default function ApplyFive() {
               )}
             </div>
 
+            {/* File Input 2 */}
             <div className="space-y-2">
               <label
                 htmlFor="financialReports"
@@ -531,7 +636,7 @@ export default function ApplyFive() {
               <div className="relative">
                 <label
                   htmlFor="financialStatement"
-                  className="w-full h-14 border border-gray-600 rounded-lg flex items-center justify-between px-4 bg-gray-800/30 text-gray-400 text-sm cursor-pointer select-none"
+                  className="w-full h-14 border border-gray-600 rounded-lg flex items-center justify-between px-4 bg-gray-800/30 text-gray-400 text-sm cursor-pointer select-none hover:border-blue-500 transition-colors"
                 >
                   <span className="truncate">
                     {formData.files?.financialStatement
@@ -562,9 +667,10 @@ export default function ApplyFive() {
               )}
             </div>
 
+            {/* Checkboxes */}
             <div className="space-y-4">
               <div className="flex items-start">
-                <label className="flex items-start cursor-pointer">
+                <label className="flex items-start cursor-pointer hover:opacity-80 transition-opacity">
                   <input
                     type="checkbox"
                     name="dataIsReal"
@@ -572,7 +678,7 @@ export default function ApplyFive() {
                     onChange={handleCheckboxChange}
                     className="hidden"
                   />
-                  <span className="mt-1 w-5 h-5 flex items-center justify-center border border-gray-400 rounded">
+                  <span className="mt-1 w-5 h-5 flex items-center justify-center border border-gray-400 rounded bg-gray-800">
                     {formData.declaration.dataIsReal && <CommonApplySVG />}
                   </span>
                   <span className="ml-2 text-sm text-gray-400">
@@ -582,7 +688,7 @@ export default function ApplyFive() {
               </div>
 
               <div className="flex items-start">
-                <label className="flex items-start cursor-pointer">
+                <label className="flex items-start cursor-pointer hover:opacity-80 transition-opacity">
                   <input
                     type="checkbox"
                     name="permitContact"
@@ -590,7 +696,7 @@ export default function ApplyFive() {
                     onChange={handleCheckboxChange}
                     className="hidden"
                   />
-                  <span className="mt-1 w-5 h-5 flex items-center justify-center border border-gray-400 rounded">
+                  <span className="mt-1 w-5 h-5 flex items-center justify-center border border-gray-400 rounded bg-gray-800">
                     {formData.declaration.permitContact && <CommonApplySVG />}
                   </span>
                   <span className="ml-2 text-sm text-gray-400">
@@ -600,7 +706,7 @@ export default function ApplyFive() {
               </div>
 
               <div className="flex items-start">
-                <label className="flex items-start cursor-pointer">
+                <label className="flex items-start cursor-pointer hover:opacity-80 transition-opacity">
                   <input
                     type="checkbox"
                     name="privacyAcceptance"
@@ -608,11 +714,11 @@ export default function ApplyFive() {
                     onChange={handleCheckboxChange}
                     className="hidden"
                   />
-                  <span className="mt-1 w-5 h-5 flex items-center justify-center border border-gray-400 rounded">
+                  <span className="mt-1 w-5 h-5 flex items-center justify-center border border-gray-400 rounded bg-gray-800">
                     {formData.declaration.privacyAcceptance && <CommonApplySVG />}
                   </span>
                   <span
-                    className="ml-2 text-sm text-gray-400 underline underline-offset-8"
+                    className="ml-2 text-sm text-gray-400 underline underline-offset-8 cursor-pointer hover:text-blue-400"
                     onClick={downloadPDF}
                   >
                     {page.checkboxes.privacyAcceptance[language]}
@@ -621,17 +727,19 @@ export default function ApplyFive() {
               </div>
             </div>
 
+            {/* ReCAPTCHA */}
             <ReCAPTCHA
               ref={recaptchaRef}
               sitekey="6LerN1MrAAAAAHK3l-g1D8z0377xlEUT9_SbfQv-"
               onChange={handleRecaptcha}
             />
 
+            {/* Buttons */}
             <div className="flex space-x-4 mt-10">
               <button
                 type="button"
                 onClick={handleGoBack}
-                className="flex-1 cursor-pointer bg-blue-900 text-white py-3 rounded-lg hover:bg-blue-800 transition-colors"
+                className="flex-1 cursor-pointer bg-blue-900 text-white py-3 rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
               >
                 {pagesTranslations.applyBtns.backBtn[language]}
               </button>
@@ -639,8 +747,8 @@ export default function ApplyFive() {
               <button
                 type="button"
                 onClick={handleSubmitForm}
-                disabled={!isFormValid}
-                className={`flex-1 py-3 rounded-lg transition-colors ${isFormValid
+                disabled={!isFormValid || localIsSubmitting}
+                className={`flex-1 py-3 rounded-lg transition-colors ${isFormValid && !localIsSubmitting
                   ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
                   : "bg-blue-900/50 text-gray-400 cursor-not-allowed"
                   }`}

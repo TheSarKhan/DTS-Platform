@@ -1,7 +1,7 @@
 import { useLanguage } from "../../context/LanguageContext";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "../../services/API/axiosConfig,api";
+import axios from "../../services/API/axiosConfig.api";
 import { toast } from "react-toastify";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { BASE_URL } from "./Admin";
