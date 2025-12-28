@@ -191,7 +191,7 @@ export default function ApplyFive() {
           }
         }
       })
-      .catch(console.error);
+      .catch();
   }, []);
 
   const handleGoBack = () => {
@@ -212,23 +212,7 @@ const handleConfirmModalYes = async () => {
     const API_URL = import.meta.env.VITE_API_URL;
     
     // 1. Server-ın əsas səhifəsinə bağlana bilirikmi?
-    try {
-      const serverCheck = await fetch(API_URL, {
-        method: 'GET',
-        mode: 'no-cors'
-      });
-    } catch (serverError) {
-      throw new Error(
-        `Backend server is not accessible!\n\n` +
-        `URL: ${API_URL}\n\n` +
-        `Please check:\n` +
-        `1. Server is running\n` +
-        `2. Correct IP/port (45.87.120.60:7777)\n` +
-        `3. No firewall blocking\n` +
-        `4. Contact backend developer`
-      );
-    }
-    
+   
     // 2. Əgər server çalışırsa, CORS testi
     try {
       const corsTest = await fetch(`${API_URL}/api/v1/companies/add`, {

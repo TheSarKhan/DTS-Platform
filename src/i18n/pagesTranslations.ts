@@ -343,12 +343,12 @@ export const pagesTranslations = {
       EN: "Only numbers can be entered",
     },
     companyRegisterNumberMinLength: {
-      AZ: "Minimum 10 rəqəm olmalıdır",
-      EN: "Must be at least 10 digits",
+      AZ: "VÖEN 10 simvoldan ibarət olmalıdır",
+      EN: "TIN must be 10 characters long",
     },
     companyRegisterNumberMaxLength: {
-      AZ: "Maksimum 10 simvol ola bilər",
-      EN: "Maximum 10 characters allowed",
+      AZ: "VÖEN 10 simvoldan ibarət olmalıdır",
+      EN: "TIN must be 10 characters long",
     },
     createYearFourDigits: {
       AZ: "4 rəqəmli il daxil edin",
